@@ -14,13 +14,23 @@ import browserifyShim from 'browserify-shim';
 import watchify from 'watchify';
 import babelify from 'babelify';
 import graphqlHTTP from 'express-graphql';
+import jwt from 'express-jwt';
 
 import schema from './schema';
 
 const app = express();
 
 // Server
-app.use('/graphql', graphqlHTTP({ schema }));
+app.use('/graphql',
+  jwt({ secret: 'JWTSuperSecretKey', credentialsRequired: false }),
+  (req, res) => {
+    const user = req.user || {};
+    return graphqlHTTP({
+      schema,
+      context: { user },
+    })(req, res);
+  }
+);
 
 // Client
 let bundleBuffer;
