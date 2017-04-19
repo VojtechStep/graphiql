@@ -4,6 +4,8 @@
  *
  *  This source code is licensed under the license found in the
  *  LICENSE file in the root directory of this source tree.
+ * 
+ * Authentication token support implemented by Vojtech Stepancik
  */
 
 import React from 'react';
@@ -48,6 +50,7 @@ import {
 export class GraphiQL extends React.Component {
 
   static propTypes = {
+    token: PropTypes.string,
     fetcher: PropTypes.func.isRequired,
     schema: PropTypes.instanceOf(GraphQLSchema),
     query: PropTypes.string,
@@ -80,6 +83,11 @@ export class GraphiQL extends React.Component {
     // Cache the storage instance
     this._storage = new StorageAPI(props.storage);
 
+    // Try to get token from previous session
+    const token =
+      props.token !== undefined ? props.token :
+      this._storage.get('token') !== null ? this._storage.get('token') : '';
+
     // Determine the initial query to display.
     const query =
       props.query !== undefined ? props.query :
@@ -110,6 +118,7 @@ export class GraphiQL extends React.Component {
       query,
       variables,
       operationName,
+      token,
       response: props.response,
       editorFlex: Number(this._storage.get('editorFlex')) || 1,
       variableEditorOpen: Boolean(variables),
@@ -150,12 +159,16 @@ export class GraphiQL extends React.Component {
   }
 
   componentWillReceiveProps(nextProps) {
+    let nextToken = this.state.token;
     let nextSchema = this.state.schema;
     let nextQuery = this.state.query;
     let nextVariables = this.state.variables;
     let nextOperationName = this.state.operationName;
     let nextResponse = this.state.response;
 
+    if (nextProps.token !== undefined) {
+      nextToken = nextProps.token;
+    }
     if (nextProps.schema !== undefined) {
       nextSchema = nextProps.schema;
     }
@@ -196,6 +209,7 @@ export class GraphiQL extends React.Component {
     }
 
     this.setState({
+      token: nextToken,
       schema: nextSchema,
       query: nextQuery,
       variables: nextVariables,
@@ -222,6 +236,7 @@ export class GraphiQL extends React.Component {
   // When the component is about to unmount, store any persistable state, such
   // that when the component is remounted, it will use the last used values.
   componentWillUnmount() {
+    this._storage.set('token', this.state.token);
     this._storage.set('query', this.state.query);
     this._storage.set('variables', this.state.variables);
     this._storage.set('operationName', this.state.operationName);
@@ -285,6 +300,7 @@ export class GraphiQL extends React.Component {
         <div className="historyPaneWrap" style={historyPaneStyle}>
           <QueryHistory
             operationName={this.state.operationName}
+            token={this.state.token}
             query={this.state.query}
             variables={this.state.variables}
             onSelectQuery={this.replaceQuery.bind(this)}
@@ -306,6 +322,15 @@ export class GraphiQL extends React.Component {
                 operations={this.state.operations}
               />
               {toolbar}
+              <div className="tokenInput" style={{width: '80%'}}>
+                <label>{'Token: '}</label>
+                <input
+                  type="text"
+                  style={{minWidth: '400px', width: '60%'}}
+                  onChange={this.handleTokenInputChange.bind(this)}
+                  value={this.state.token || ''}
+                />
+              </div>
             </div>
             {
               !this.state.docExplorerOpen &&
@@ -453,11 +478,12 @@ export class GraphiQL extends React.Component {
     return result;
   }
 
-  replaceQuery(query, variables, operationName) {
+  replaceQuery(query, variables, operationName, token) {
     this.setState({
       query,
       variables,
       operationName,
+      token
     });
   }
 
@@ -466,7 +492,10 @@ export class GraphiQL extends React.Component {
   _fetchSchema() {
     const fetcher = this.props.fetcher;
 
-    const fetch = observableToPromise(fetcher({ query: introspectionQuery }));
+    const fetch = observableToPromise(fetcher({
+      query: introspectionQuery,
+      token: this.state.token,
+    }));
     if (!isPromise(fetch)) {
       this.setState({
         response: 'Fetcher did not return a Promise for introspection.'
@@ -518,7 +547,7 @@ export class GraphiQL extends React.Component {
     });
   }
 
-  _fetchQuery(query, variables, operationName, cb) {
+  _fetchQuery(query, variables, operationName, token, cb) {
     const fetcher = this.props.fetcher;
     let jsonVariables = null;
 
@@ -535,6 +564,7 @@ export class GraphiQL extends React.Component {
 
     const fetch = fetcher({
       query,
+      token,
       variables: jsonVariables,
       operationName
     });
@@ -614,6 +644,7 @@ export class GraphiQL extends React.Component {
         editedQuery,
         variables,
         operationName,
+        this.state.token,
         result => {
           if (queryID === this._editorQueryID) {
             this.setState({
@@ -903,6 +934,11 @@ export class GraphiQL extends React.Component {
 
     document.addEventListener('mousemove', onMouseMove);
     document.addEventListener('mouseup', onMouseUp);
+  }
+
+  handleTokenInputChange = changeEvent => {
+    changeEvent.preventDefault();
+    this.setState({ token: changeEvent.currentTarget.value });
   }
 }
 
