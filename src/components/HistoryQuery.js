@@ -1,9 +1,9 @@
 import React from 'react';
 import PropTypes from 'prop-types';
 
-const HistoryQuery = ({query, variables, operationName, onSelect}) => {
+const HistoryQuery = ({token, query, variables, operationName, onSelect}) => {
   const onClick = () => {
-    onSelect(query, variables, operationName);
+    onSelect(query, variables, operationName, token);
   };
 
   let displayName;
@@ -15,11 +15,12 @@ const HistoryQuery = ({query, variables, operationName, onSelect}) => {
   }
 
   return (
-    <p onClick={onClick}>{displayName}</p>
+    <p onClick={onClick}>{(token ? 'T ' : '') + displayName}</p>
   );
 };
 
 HistoryQuery.propTypes = {
+  token: PropTypes.string,
   query: PropTypes.string,
   variables: PropTypes.string,
   operationName: PropTypes.string,
