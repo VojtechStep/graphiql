@@ -5,6 +5,9 @@ import HistoryStore from '../utility/HistoryStore';
 import HistoryQuery from './HistoryQuery';
 
 const shouldSaveQuery = (nextProps, current, lastQuerySaved) => {
+  if (nextProps.token !== nextProps.token) {
+    return true;
+  }
   if (nextProps.queryID === current.queryID) {
     return false;
   }
@@ -33,6 +36,7 @@ const MAX_HISTORY_LENGTH = 20;
 
 export class QueryHistory extends React.Component {
   static propTypes = {
+    token: PropTypes.string,
     query: PropTypes.string,
     variables: PropTypes.string,
     operationName: PropTypes.string,
@@ -52,6 +56,7 @@ export class QueryHistory extends React.Component {
   componentWillReceiveProps(nextProps) {
     if (shouldSaveQuery(nextProps, this.props, this.store.fetchRecent())) {
       this.store.push({
+        token: nextProps.token,
         query: nextProps.query,
         variables: nextProps.variables || '',
         operationName: nextProps.operationName || '',
