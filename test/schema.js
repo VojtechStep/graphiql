@@ -19,7 +19,9 @@ const {
   GraphQLString,
   GraphQLID,
   GraphQLList,
+  GraphQLNonNull,
 } = require('graphql');
+import jwt from 'jsonwebtoken';
 
 // Test Schema
 const TestEnum = new GraphQLEnumType({
@@ -121,6 +123,11 @@ const TestType = new GraphQLObjectType({
       description: '`test` field from `Test` type.',
       resolve: () => ({})
     },
+    isAdmin: {
+      type: GraphQLBoolean,
+      description: 'The Admin status of the current token',
+      resolve: (root, args, { user }) => user.isAdmin,
+    },
     longDescriptionType: {
       type: TestType,
       description: '`longDescriptionType` field from `Test` type, which ' +
@@ -185,6 +192,24 @@ const TestMutationType = new GraphQLObjectType({
       args: {
         value: { type: GraphQLString }
       }
+    },
+    generateToken: {
+      type: GraphQLString,
+      description: 'Generate JWT',
+      args: {
+        isAdmin: { type: new GraphQLNonNull(GraphQLBoolean) },
+      },
+      resolve: (root, { isAdmin }) =>
+        jwt.sign({
+          iat: Math.floor(new Date().getTime() / 1000),
+          exp: (() => {
+            const now = new Date();
+            now.setDate(now.getDate() + 3);
+            return Math.floor(now.getTime() / 1000)
+          })(),
+          iss: 'GraphiQL-backend',
+          isAdmin
+        }, 'JWTSuperSecretKey')
     }
   }
 });
