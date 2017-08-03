@@ -11,7 +11,6 @@ import PropTypes from 'prop-types';
 
 export default class HistoryQuery extends React.Component {
   static propTypes = {
-    token: PropTypes.string,
     favorite: PropTypes.bool,
     favoriteSize: PropTypes.number,
     handleToggleFavorite: PropTypes.func,
@@ -48,7 +47,7 @@ export default class HistoryQuery extends React.Component {
         onMouseEnter={this.handleMouseEnter.bind(this)}
         onMouseLeave={this.handleMouseLeave.bind(this)}>
         <span>
-          {(this.token ? 'T ' : '') + displayName}
+          {displayName}
         </span>
         <span onClick={this.handleStarClick.bind(this)} style={starStyles}>
           {starIcon}
@@ -73,10 +72,7 @@ export default class HistoryQuery extends React.Component {
     this.props.onSelect(
       this.props.query,
       this.props.variables,
-      this.props.operationName,
-      {
-        token: this.token,
-      }
+      this.props.operationName
     );
   }
 

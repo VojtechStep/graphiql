@@ -51,6 +51,8 @@ export class GraphiQL extends React.Component {
 
   static propTypes = {
     token: PropTypes.string,
+    acceptLanguage: PropTypes.string,
+    authorizeAs: PropTypes.string,
     fetcher: PropTypes.func.isRequired,
     schema: PropTypes.instanceOf(GraphQLSchema),
     query: PropTypes.string,
@@ -88,6 +90,15 @@ export class GraphiQL extends React.Component {
       props.token !== undefined ? props.token :
       this._storage.get('token') !== null ? this._storage.get('token') : '';
 
+    // Try to get the Accept-Language header from previous session
+    const acceptLanguage =
+      props.acceptLanguage !== undefined ? props.acceptLanguage :
+      this._storage.get('acceptLanguage') || '';
+
+    const authorizeAs =
+      props.authorizeAs !== undefined ? props.authorizeAs :
+      this._storage.get('authorizeAs') || '';
+
     // Determine the initial query to display.
     const query =
       props.query !== undefined ? props.query :
@@ -119,6 +130,8 @@ export class GraphiQL extends React.Component {
       variables,
       operationName,
       token,
+      acceptLanguage,
+      authorizeAs,
       response: props.response,
       editorFlex: Number(this._storage.get('editorFlex')) || 1,
       variableEditorOpen: Boolean(variables),
@@ -160,6 +173,8 @@ export class GraphiQL extends React.Component {
 
   componentWillReceiveProps(nextProps) {
     let nextToken = this.state.token;
+    let nextAcceptLanguage = this.state.acceptLanguage;
+    let nextAuthorizeAs = this.state.authorizeAs;
     let nextSchema = this.state.schema;
     let nextQuery = this.state.query;
     let nextVariables = this.state.variables;
@@ -168,6 +183,12 @@ export class GraphiQL extends React.Component {
 
     if (nextProps.token !== undefined) {
       nextToken = nextProps.token;
+    }
+    if (nextProps.acceptLanguage !== undefined) {
+      nextAcceptLanguage = nextProps.acceptLanguage;
+    }
+    if (nextProps.authorizeAs !== undefined) {
+      nextAuthorizeAs = nextProps.authorizeAs;
     }
     if (nextProps.schema !== undefined) {
       nextSchema = nextProps.schema;
@@ -210,6 +231,8 @@ export class GraphiQL extends React.Component {
 
     this.setState({
       token: nextToken,
+      acceptLanguage: nextAcceptLanguage,
+      authorizeAs: nextAuthorizeAs,
       schema: nextSchema,
       query: nextQuery,
       variables: nextVariables,
@@ -237,6 +260,8 @@ export class GraphiQL extends React.Component {
   // that when the component is remounted, it will use the last used values.
   componentWillUnmount() {
     this._storage.set('token', this.state.token);
+    this._storage.set('acceptLanguage', this.state.acceptLanguage);
+    this._storage.set('authorizeAs', this.state.authorizeAs);
     this._storage.set('query', this.state.query);
     this._storage.set('variables', this.state.variables);
     this._storage.set('operationName', this.state.operationName);
@@ -300,7 +325,6 @@ export class GraphiQL extends React.Component {
         <div className="historyPaneWrap" style={historyPaneStyle}>
           <QueryHistory
             operationName={this.state.operationName}
-            token={this.state.token}
             query={this.state.query}
             variables={this.state.variables}
             onSelectQuery={this.handleSelectHistoryQuery}
@@ -322,15 +346,33 @@ export class GraphiQL extends React.Component {
                 operations={this.state.operations}
               />
               {toolbar}
-              <div className="tokenInput" style={{width: '80%'}}>
+              <div className="tokenInput" style={{width: '30%'}}>
                 <label>{'Token: '}</label>
                 <input
                   type="text"
-                  style={{minWidth: '400px', width: '60%'}}
+                  style={{minWidth: '100px', width: '60%'}}
                   onChange={this.handleTokenInputChange.bind(this)}
                   value={this.state.token || ''}
                 />
               </div>
+              <div className="acceptLanguageInput" style={{width: '30%'}}>
+                <label>{'Accept Language: '}</label>
+                <input
+                  type="text"
+                  style={{minWidth: '100px', width: '60%'}}
+                  onChange={this.handleAcceptLanguageInputChange.bind(this)}
+                  value={this.state.acceptLanguage || ''}
+                />
+              </div>
+              <div className="authorizeAsInput" style={{width: '30%'}}>
+              <label>{'Authorize As: '}</label>
+              <input
+                type="text"
+                style={{minWidth: '100px', width: '60%'}}
+                onChange={this.handleAuthorizeAsInputChange.bind(this)}
+                value={this.state.authorizeAs || ''}
+              />
+            </div>
             </div>
             {
               !this.state.docExplorerOpen &&
@@ -485,7 +527,11 @@ export class GraphiQL extends React.Component {
 
     const fetch = observableToPromise(fetcher({
       query: introspectionQuery,
-      token: this.state.token,
+      meta: {
+        token: this.state.token,
+        acceptLanguage: this.state.acceptLanguage,
+        authorizeAs: this.state.authorizeAs,
+      },
     }));
     if (!isPromise(fetch)) {
       this.setState({
@@ -538,7 +584,7 @@ export class GraphiQL extends React.Component {
     });
   }
 
-  _fetchQuery(query, variables, operationName, token, cb) {
+  _fetchQuery(query, variables, operationName, meta, cb) {
     const fetcher = this.props.fetcher;
     let jsonVariables = null;
 
@@ -555,7 +601,7 @@ export class GraphiQL extends React.Component {
 
     const fetch = fetcher({
       query,
-      token,
+      meta,
       variables: jsonVariables,
       operationName
     });
@@ -632,7 +678,11 @@ export class GraphiQL extends React.Component {
         editedQuery,
         variables,
         operationName,
-        this.state.token,
+        {
+          token: this.state.token,
+          acceptLanguage: this.state.acceptLanguage,
+          authorizeAs: this.state.authorizeAs,
+        },
         result => {
           if (queryID === this._editorQueryID) {
             this.setState({
@@ -940,6 +990,16 @@ export class GraphiQL extends React.Component {
   handleTokenInputChange = changeEvent => {
     changeEvent.preventDefault();
     this.setState({ token: changeEvent.currentTarget.value });
+  }
+
+  handleAcceptLanguageInputChange = changeEvent => {
+    changeEvent.preventDefault();
+    this.setState({ acceptLanguage: changeEvent.currentTarget.value });
+  }
+
+  handleAuthorizeAsInputChange = changeEvent => {
+    changeEvent.preventDefault();
+    this.setState({ authorizeAs: changeEvent.currentTarget.value });
   }
 }
 

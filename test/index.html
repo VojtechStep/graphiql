@@ -110,9 +110,15 @@
           'Accept': 'application/json',
           'Content-Type': 'application/json',
         };
-        if (graphQLParams.token) {
-          headers.Authorization = 'Bearer ' + graphQLParams.token;
+        if (graphQLParams.meta) {
+          if (graphQLParams.meta.token)
+            headers.Authorization = 'Bearer ' + graphQLParams.meta.token;
+          if (graphQLParams.meta.acceptLanguage)
+            headers['Accept-Language'] = graphQLParams.meta.acceptLanguage;
+          if (graphQLParams.meta.authorizeAs)
+            headers['Authorize-As'] = graphQLParams.meta.authorizeAs;
         }
+        console.log(headers);
         return fetch('/graphql', {
           method: 'post',
           headers,
