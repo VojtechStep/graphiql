@@ -18,7 +18,7 @@
     "node": true
   },
 
-  "ecmaFeatures": {
+  "parserOptions": {
     "arrowFunctions": true,
     "binaryLiterals": true,
     "blockBindings": true,
@@ -75,7 +75,7 @@
     "react/jsx-no-literals": 2,
     "react/jsx-no-undef": 2,
     "react/jsx-pascal-case": 2,
-    "react/jsx-space-before-closing": 2,
+    "react/jsx-tag-spacing": 2,
     "react/jsx-uses-react": 2,
     "react/jsx-uses-vars": 2,
 
@@ -106,7 +106,7 @@
     "handle-callback-err": [2, "error"],
     "id-length": 0,
     "id-match": [2, "^(?:_?[a-zA-Z0-9]*)|[_A-Z0-9]+$"],
-    "indent": [2, 2, {"SwitchCase": 1}],
+    "indent": 0,
     "init-declarations": 0,
     "key-spacing": [2, {"beforeColon": false, "afterColon": true}],
     "keyword-spacing": 2,
